@@ -38,7 +38,15 @@ initialRestrictionParams <- tribble(
   "SF", 3,
   "C", 3
 ) %>%
-  mutate(slots = slots * 14)
+  mutate(slots = slots * 10)
+
+myProjection <- myData %>%
+  group_by(position) %>%
+  mutate(
+    avg = mean(finalPoints),
+    vorp = finalPoints - avg
+  ) %>%
+  arrange(desc(vorp))
 
 replacementPlayer <- function(pos, slots) {
   myProjection %>%
@@ -58,62 +66,4 @@ projVorp <- myData %>%
   arrange(desc(vorp))
 
 
-
-
-#### Actual draft case. After each pick we need to remove picked players and recalculate relative ratings
-
-pickedPlayers <- c(
-  'Giannis Antetokounmpo',
-  'Lebron James',
-  'Anthony Davis',
-  'James Harden',
-  'Kevin Durant',
-  'Russell Westbrook'
-)
-
-filteringCondition <- paste0(pickedPlayers, collapse = "|")
-
-leftPlayers <- myData %>%
-  filter(!(str_detect(tolower(PLAYER), tolower(filteringCondition))))
-
-# To fill in picked positions we will just choose primary position of picked player
-pickedPositions <- myData %>%
-  filter(str_detect(tolower(PLAYER), tolower(filteringCondition))) %>%
-  distinct(PLAYER, primaryPosition) %>%
-  group_by(primaryPosition) %>%
-  summarise(pickedCount = n()) %>%
-  rename(pos = primaryPosition)
-
-currentRestrictions <- initialRestrictionParams %>%
-  left_join(pickedPositions, by = 'pos') %>%
-  mutate(
-    pickedCount = ifelse(is.na(pickedCount), 0, pickedCount),
-    slots = slots - pickedCount
-  ) %>%
-  select(-pickedCount)
-
-actualProjection <- leftPlayers %>%
-  group_by(position) %>%
-  mutate(
-    avg = mean(finalPoints),
-    vorp = finalPoints - avg
-  ) %>%
-  arrange(desc(vorp))
-
-actualReplacementPlayer <- function(pos, slots) {
-  actualProjection %>%
-    filter(position == pos) %>%
-    arrange(desc(finalPoints)) %>%
-    filter(row_number() <= slots) %>%
-    group_by(position) %>%
-    summarise(rp = mean(finalPoints))
-}
-
-rp <- pmap(currentRestrictions, actualReplacementPlayer) %>% bind_rows()
-
-projVorp <- leftPlayers %>%
-  left_join(rp, by = 'position') %>%
-  mutate(vorp = finalPoints - rp) %>%
-  select(position, PLAYER, finalPoints, vorp) %>%
-  arrange(desc(vorp))
 
