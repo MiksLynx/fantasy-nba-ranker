@@ -116,5 +116,5 @@ leftPlayers %>%
   mutate(vorp = finalPoints - rp) %>%
   select(position, PLAYER, finalPoints, vorp) %>%
   arrange(desc(vorp)) %>%
-  slice(1:10)
+  slice(1:20)
 

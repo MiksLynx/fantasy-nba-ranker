@@ -38,7 +38,7 @@ initialRestrictionParams <- tribble(
   "SF", 3,
   "C", 3
 ) %>%
-  mutate(slots = slots * 10)
+  mutate(slots = slots * 14)
 
 myProjection <- myData %>%
   group_by(position) %>%
